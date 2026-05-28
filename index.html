@@ -133,7 +133,7 @@ header span{font-size:11px;opacity:.7}
 
     <div class="login-err" id="login-err">❌ Cheie API invalidă. Verifică și încearcă din nou.</div>
     <div class="login-input-wrap">
-      <input type="password" id="login-key" placeholder="AIza..." autocomplete="off"
+      <input type="password" id="login-key" placeholder="gsk_..." autocomplete="off"
         onkeydown="if(event.key==='Enter')doLogin()"/>
       <button class="toggle-pass" onclick="togglePass()" title="Arată/Ascunde">👁</button>
     </div>
@@ -148,7 +148,7 @@ header span{font-size:11px;opacity:.7}
   <div style="width:28px;height:28px;background:#27ae60;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">AP</div>
   <div><h1>Agent AI — Achiziții Publice România</h1><span>Legislație ANAP · Documente · Prețuri SEAP · Conversie PDF</span></div>
   <div class="hright">
-    <div class="hbadge">● Gemini Active</div>
+    <div class="hbadge">● Groq Active</div>
     <button class="logout-btn" onclick="doLogout()">🔒 Deconectare</button>
   </div>
 </header>
@@ -398,15 +398,17 @@ document.getElementById('login-key').addEventListener('keydown',e=>{if(e.key==='
 
 // ===== AI CALL — GEMINI =====
 async function callAI(prompt,sys){
-  const fullPrompt=(sys||getSys())+'\n\n'+prompt;
-  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{
+  const fullPrompt=(sys||getSys())+'
+
+'+prompt;
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contents:[{parts:[{text:fullPrompt}]}],generationConfig:{maxOutputTokens:4096,temperature:0.3}})
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:fullPrompt}],max_tokens:4096,temperature:0.3})
   });
-  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Eroare Gemini');}
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Eroare Groq');}
   const d=await r.json();
-  return d.candidates[0].content.parts[0].text||'';
+  return d.choices[0].message.content||'';
 }
 
 function getSys(){
