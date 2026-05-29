@@ -133,7 +133,7 @@ header span{font-size:11px;opacity:.7}
 
     <div class="login-err" id="login-err">❌ Cheie API invalidă. Verifică și încearcă din nou.</div>
     <div class="login-input-wrap">
-      <input type="password" id="login-key" placeholder="Cheia Gemini..." autocomplete="off"
+      <input type="password" id="login-key" placeholder="Cheia API Gemini..." autocomplete="off"
         onkeydown="if(event.key==='Enter')doLogin()"/>
       <button class="toggle-pass" onclick="togglePass()" title="Arată/Ascunde">👁</button>
     </div>
@@ -405,12 +405,16 @@ async function callAI(prompt,sys){
   const body={contents:[{parts:[{text:fullPrompt}]}],generationConfig:{maxOutputTokens:4096,temperature:0.3}};
   const r=await fetch(PROXY,{
     method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    headers:{
+      'Content-Type':'application/json',
+      'X-Api-Key':apiKey
+    },
     body:JSON.stringify(body)
   });
-  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Eroare proxy');}
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||'Eroare proxy '+r.status);}
   const d=await r.json();
-  return d.candidates[0].content.parts[0].text||'';
+  if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
 }
 
 function getSys(){
