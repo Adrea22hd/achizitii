@@ -133,7 +133,7 @@ header span{font-size:11px;opacity:.7}
 
     <div class="login-err" id="login-err">❌ Cheie API invalidă. Verifică și încearcă din nou.</div>
     <div class="login-input-wrap">
-      <input type="password" id="login-key" placeholder="gsk_..." autocomplete="off"
+      <input type="password" id="login-key" placeholder="Cheia Gemini..." autocomplete="off"
         onkeydown="if(event.key==='Enter')doLogin()"/>
       <button class="toggle-pass" onclick="togglePass()" title="Arată/Ascunde">👁</button>
     </div>
@@ -148,7 +148,7 @@ header span{font-size:11px;opacity:.7}
   <div style="width:28px;height:28px;background:#27ae60;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">AP</div>
   <div><h1>Agent AI — Achiziții Publice România</h1><span>Legislație ANAP · Documente · Prețuri SEAP · Conversie PDF</span></div>
   <div class="hright">
-    <div class="hbadge">● Groq Active</div>
+    <div class="hbadge">● Gemini Active</div>
     <button class="logout-btn" onclick="doLogout()">🔒 Deconectare</button>
   </div>
 </header>
@@ -401,14 +401,16 @@ async function callAI(prompt,sys){
   const fullPrompt=(sys||getSys())+'
 
 '+prompt;
-  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+  const PROXY='https://white-bonus-7e37.ileabogdan.workers.dev';
+  const body={contents:[{parts:[{text:fullPrompt}]}],generationConfig:{maxOutputTokens:4096,temperature:0.3}};
+  const r=await fetch(PROXY,{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-    body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:fullPrompt}],max_tokens:4096,temperature:0.3})
+    body:JSON.stringify(body)
   });
-  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Eroare Groq');}
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Eroare proxy');}
   const d=await r.json();
-  return d.choices[0].message.content||'';
+  return d.candidates[0].content.parts[0].text||'';
 }
 
 function getSys(){
