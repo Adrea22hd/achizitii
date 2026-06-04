@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent AI Achizitii Publice Romania</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;flex-direction:column;font-size:14px}
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1a3a5c,#0f2236);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:white;border-radius:16px;padding:2.5rem;width:420px;max-width:95vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-logo{width:60px;height:60px;background:#27ae60;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:white;margin:0 auto 1.25rem}
+.login-box h1{font-size:18px;font-weight:500;color:#1a3a5c;margin-bottom:.35rem}
+.login-iw{position:relative;margin-bottom:1rem}
+.login-iw input{width:100%;padding:11px 40px 11px 14px;border:1.5px solid #d0d0c8;border-radius:9px;font-size:13px;font-family:monospace;outline:none}
+.login-iw input:focus{border-color:#1a3a5c}
+.tpass{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#888;font-size:16px}
+.login-btn{width:100%;padding:11px;background:#1a3a5c;color:white;border:none;border-radius:9px;font-size:14px;cursor:pointer;font-weight:500}
+.login-btn:hover{background:#142d4a}
+.login-err{background:#fce4e4;border:1px solid #f5a5a5;border-radius:7px;padding:8px 12px;font-size:12px;color:#c0392b;margin-bottom:.75rem;display:none}
+#app{display:none;flex-direction:column;height:100vh}
+header{background:#1a3a5c;color:white;padding:.65rem 1.5rem;display:flex;align-items:center;gap:12px;flex-shrink:0}
+header h1{font-size:15px;font-weight:500}
+header span{font-size:11px;opacity:.7}
+.hright{margin-left:auto;display:flex;align-items:center;gap:10px}
+.hbadge{background:#27ae60;color:white;font-size:11px;padding:2px 8px;border-radius:10px}
+.lbtn{background:rgba(255,255,255,.15);border:none;color:white;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer}
+.tabs{display:flex;background:#142d4a;flex-shrink:0;overflow-x:auto}
+.tab{padding:.5rem 1rem;color:rgba(255,255,255,.6);font-size:12px;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tab.active{color:white;border-bottom-color:#27ae60}
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:225px;background:white;border-right:1px solid #e0e0d8;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.stitle{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;padding:.65rem 1rem .3rem}
+.dbtn{display:block;width:100%;text-align:left;padding:7px 1rem;border:none;background:none;cursor:pointer;font-size:12px;color:#333;border-bottom:1px solid #f5f5f0}
+.dbtn:hover{background:#eef4ff;color:#1a3a5c}
+.dbtn small{display:block;font-size:10px;color:#aaa;margin-top:1px}
+.plabel{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;padding:.65rem 1rem .3rem}
+.pitem{padding:6px 1rem;font-size:11px;color:#555;border-bottom:1px solid #f5f5f0;display:flex;align-items:center;justify-content:space-between}
+.apbtn{margin:.6rem 1rem;padding:6px;background:#1a3a5c;color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer;width:calc(100% - 2rem)}
+.panel{flex:1;display:none;flex-direction:column;overflow:hidden}
+.panel.active{display:flex}
+.msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:11px}
+.msg{display:flex;gap:8px;max-width:90%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg.assistant{align-self:flex-start}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;margin-top:2px}
+.msg.user .av{background:#1a3a5c;color:white}
+.msg.assistant .av{background:#e8f5e9;color:#2e7d32}
+.bbl{padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.65;white-space:pre-wrap}
+.msg.user .bbl{background:#1a3a5c;color:white;border-bottom-right-radius:3px}
+.msg.assistant .bbl{background:white;color:#222;border:1px solid #e0e0d8;border-bottom-left-radius:3px}
+.typing{display:flex;gap:4px;align-items:center;padding:8px 12px;background:white;border:1px solid #e0e0d8;border-radius:10px}
+.dot{width:6px;height:6px;border-radius:50%;background:#bbb;animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.qbtns{padding:.4rem 1rem;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;background:white;border-top:1px solid #f0f0ea}
+.qbtn{padding:4px 8px;border:1px solid #d0d5dd;border-radius:12px;font-size:11px;color:#444;background:white;cursor:pointer}
+.qbtn:hover{background:#eef4ff;border-color:#1a3a5c;color:#1a3a5c}
+.iarea{padding:.6rem 1rem;background:white;border-top:1px solid #e0e0d8;display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.iarea textarea{flex:1;padding:8px 11px;border:1px solid #d0d0c8;border-radius:8px;font-size:13px;font-family:inherit;resize:none;outline:none;min-height:38px;max-height:100px;line-height:1.5}
+.iarea textarea:focus{border-color:#1a3a5c}
+.sbtn2{padding:8px 15px;background:#1a3a5c;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;height:38px}
+.sbtn2:disabled{background:#ccc;cursor:not-allowed}
+.scrl{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:12px}
+.card{background:white;border-radius:10px;border:1px solid #e0e0d8;padding:1rem}
+.card h3{font-size:13px;font-weight:500;color:#1a3a5c;margin-bottom:.7rem}
+.fg{display:flex;flex-direction:column;gap:3px;flex:1;min-width:130px}
+.fg label{font-size:11px;color:#666;font-weight:500}
+.fg input,.fg select{padding:6px 8px;border:1px solid #d0d0c8;border-radius:6px;font-size:12px;outline:none;font-family:inherit}
+.sbtn{padding:7px 16px;background:#1a3a5c;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer}
+.sbtn:disabled{background:#ccc}
+.ebtn{padding:6px 11px;border:1px solid #1a3a5c;background:white;color:#1a3a5c;border-radius:6px;font-size:12px;cursor:pointer}
+.info{background:#e8f0fe;border:1px solid #b8d0f4;border-radius:7px;padding:.6rem .9rem;font-size:12px;color:#1a3a5c;line-height:1.6}
+.err{background:#fce4e4;border:1px solid #f5a5a5;border-radius:7px;padding:.6rem .9rem;font-size:12px;color:#c0392b;line-height:1.6}
+.ok{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:7px;padding:.6rem .9rem;font-size:12px;color:#1a5c2a;line-height:1.6}
+.upz{border:2px dashed #b0c4de;border-radius:9px;padding:1.25rem;text-align:center;cursor:pointer;background:#f8faff}
+.upz:hover{border-color:#1a3a5c;background:#eef4ff}
+.upz input{display:none}
+.upz p{font-size:12px;color:#888;margin-top:.4rem}
+.upz strong{font-size:13px;color:#1a3a5c}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#e8f0fe;border:1px solid #b8d0f4;border-radius:14px;padding:4px 10px;font-size:12px;color:#1a3a5c;margin-top:6px}
+.prog{background:#f0f0ea;border-radius:4px;height:5px;overflow:hidden;margin-top:6px}
+.pb{height:5px;background:#27ae60;transition:width .3s;border-radius:4px}
+.ra{background:#f8faff;border:1px solid #d0d8e8;border-radius:7px;padding:.9rem;font-size:12px;line-height:1.8;white-space:pre-wrap;max-height:260px;overflow-y:auto;color:#222}
+.mtw{display:flex;border-bottom:1px solid #e0e0d8;margin-bottom:.75rem}
+.mt{padding:.4rem .8rem;font-size:12px;cursor:pointer;border:none;background:none;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px}
+.mt.active{color:#1a3a5c;border-bottom-color:#1a3a5c;font-weight:500}
+.mtp{display:none}.mtp.active{display:block}
+.rtbl{width:100%;border-collapse:collapse;font-size:11px}
+.rtbl th{background:#f0f4f8;padding:6px 7px;text-align:left;font-weight:500;color:#333;border-bottom:2px solid #d0d8e4}
+.rtbl td{padding:6px 7px;border-bottom:1px solid #eee;color:#333}
+.rtbl tr:hover td{background:#f8f9ff}
+.ph{font-weight:600;color:#1a5c2a}
+.best{background:#e8f5e9}
+.bg2{background:#e8f5e9;color:#1a5c2a;padding:1px 5px;border-radius:7px;font-size:10px}
+.fr{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.wg{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-width:440px;margin:0 auto}
+.wc{background:white;border:1px solid #e0e0d8;border-radius:8px;padding:9px 11px;cursor:pointer;font-size:12px;color:#333}
+.wc:hover{border-color:#1a3a5c;color:#1a3a5c}
+.wc .wt{font-weight:500;margin-bottom:2px}
+.wc .ws{font-size:10px;color:#aaa}
+.welcome{text-align:center;padding:1.5rem 1rem;color:#666}
+.welcome h2{font-size:16px;color:#1a3a5c;margin-bottom:.4rem;font-weight:500}
+.welcome p{font-size:12px;line-height:1.6;max-width:420px;margin:0 auto .9rem}
+</style>
+</head>
+<body>
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">AP</div>
+    <h1>Agent AI - Achizitii Publice</h1>
+    <div class="login-err" id="lerr"></div>
+    <div class="login-iw">
+      <input type="password" id="lkey" placeholder="sk-ant-..." autocomplete="off"/>
+      <button class="tpass" onclick="togglePass()">&#128065;</button>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Intra in aplicatie</button>
+  </div>
+</div>
+<div id="app">
+<header>
+  <div style="width:28px;height:28px;background:#27ae60;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:white">AP</div>
+  <div><h1>Agent AI - Achizitii Publice Romania</h1><span>Legislatie ANAP - Documente - Preturi SEAP - Conversie PDF</span></div>
+  <div class="hright"><div class="hbadge">Claude Active</div><button class="lbtn" onclick="doLogout()">Deconectare</button></div>
+</header>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('chat')">Asistent AI</button>
+  <button class="tab" onclick="switchTab('proc')">Proceduri APIA</button>
+  <button class="tab" onclick="switchTab('pdf')">PDF Word/Excel</button>
+  <button class="tab" onclick="switchTab('search')">Preturi SEAP</button>
+  <button class="tab" onclick="switchTab('links')">SEAP Resurse</button>
+</div>
+<div class="main">
+  <div class="sidebar">
+    <div class="stitle">Genereaza documente</div>
+    <button class="dbtn" onclick="ins('referat')">Referat necesitate<small>Art. 2 HG 395/2016</small></button>
+    <button class="dbtn" onclick="ins('estimare')">Nota estimare valoare<small>Art. 9 Legea 98/2016</small></button>
+    <button class="dbtn" onclick="ins('caiet')">Caiet de sarcini<small>Art. 155 Legea 98/2016</small></button>
+    <button class="dbtn" onclick="ins('just')">Nota justificativa<small>Achizitie directa</small></button>
+    <button class="dbtn" onclick="ins('atrib')">Nota de atribuire<small>Art. 216 Legea 98/2016</small></button>
+    <button class="dbtn" onclick="ins('contract')">Contract SEAP<small>Clauze obligatorii</small></button>
+    <button class="dbtn" onclick="ins('receptie')">PV Receptie<small>Finalizare achizitie</small></button>
+    <button class="dbtn" onclick="ins('checklist')">Checklist dosar<small>Audit / CCR</small></button>
+    <div class="plabel">Proceduri APIA (<span id="pc">0</span>)</div>
+    <div id="psidebar"><div style="padding:7px 1rem;font-size:11px;color:#aaa;font-style:italic">Nicio procedura</div></div>
+    <button class="apbtn" onclick="switchTab('proc')">+ Gestioneaza proceduri</button>
+  </div>
+  <div class="panel active" id="panel-chat">
+    <div class="msgs" id="msgs">
+      <div class="welcome" id="welcome">
+        <h2>Expert in achizitii publice Romania</h2>
+        <p>Legislatie completa Legea 98/2016, HG 395/2016, instructiuni ANAP. Generez documente gata de semnat, rezistente la Curtea de Conturi si audit intern.</p>
+        <div class="wg">
+          <div class="wc" onclick="qa('Care sunt pragurile actuale pentru achizitie directa in 2025 si cand e obligatoriu SEAP?')"><div class="wt">Praguri 2025</div><div class="ws">Valori actualizate</div></div>
+          <div class="wc" onclick="qa('Ce documente sunt obligatorii in dosarul de achizitie directa pentru Curtea de Conturi?')"><div class="wt">Dosar complet</div><div class="ws">Documente obligatorii</div></div>
+          <div class="wc" onclick="qa('Ce verifica Curtea de Conturi la o achizitie directa? Cele mai frecvente abateri?')"><div class="wt">Control CCR</div><div class="ws">Abateri frecvente</div></div>
+          <div class="wc" onclick="qa('Cum se face o achizitie directa in SEAP pas cu pas din catalogul electronic?')"><div class="wt">Ghid SEAP</div><div class="ws">Pas cu pas</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="qbtns">
+      <button class="qbtn" onclick="qa('Care sunt pragurile pentru achizitie directa in 2025?')">Praguri 2025</button>
+      <button class="qbtn" onclick="qa('Ce trebuie sa contina referatul de necesitate conform ANAP?')">Referat</button>
+      <button class="qbtn" onclick="qa('Cum justific alegerea furnizorului la achizitie directa?')">Justificare furnizor</button>
+      <button class="qbtn" onclick="qa('Ce clauze obligatorii trebuie in contractul de achizitie directa?')">Contract</button>
+      <button class="qbtn" onclick="qa('Cum completez nota de atribuire conform art.216 Legea 98/2016?')">Nota atribuire</button>
+    </div>
+    <div class="iarea">
+      <textarea id="uinput" placeholder="Intreaba despre legislatie, genereaza documente..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+      <button class="sbtn2" id="sbtn" onclick="sendMsg()">Trimite</button>
+    </div>
+  </div>
+  <div class="panel" id="panel-proc">
+    <div class="scrl">
+      <div class="info">Adauga proceduri ca text sau fisier Word/Excel. AI le verifica fata de legislatie si le corecteaza.</div>
+      <div class="card">
+        <h3>Adauga procedura noua</h3>
+        <div class="mtw">
+          <button class="mt active" onclick="switchMt('text')">Text direct</button>
+          <button class="mt" onclick="switchMt('file')">Fisier Word/Excel</button>
+        </div>
+        <div class="mtp active" id="mt-text">
+          <textarea id="proc-text" style="width:100%;height:100px;padding:8px;border:1px solid #d0d0c8;border-radius:7px;font-size:12px;font-family:inherit;resize:vertical;outline:none" placeholder="Ex: Procedura APIA-001 privind achizitia consumabile..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="sbtn" onclick="addPT()">Adauga</button>
+            <button class="sbtn" style="background:#e67e22" onclick="verifyP(document.getElementById('proc-text').value)">Verifica si corecteaza cu AI</button>
+          </div>
+        </div>
+        <div class="mtp" id="mt-file">
+          <div class="upz" onclick="document.getElementById('pfile').click()" ondragover="event.preventDefault();this.style.borderColor='#1a3a5c'" ondragleave="this.style.borderColor='#b0c4de'" ondrop="handlePDrop(event)">
+            <input type="file" id="pfile" accept=".docx,.xlsx,.xls,.txt" onchange="handlePF(this.files[0])">
+            <strong>Click sau trage fisierul aici</strong>
+            <p>Accepta: .docx .xlsx .xls .txt</p>
+          </div>
+          <div id="pfs"></div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="sbtn" id="btn-af" style="display:none" onclick="addPFF()">Adauga fisierul</button>
+            <button class="sbtn" style="background:#e67e22;display:none" id="btn-vf" onclick="verifyP(procFT)">Verifica cu AI</button>
+          </div>
+        </div>
+      </div>
+      <div id="vbox" style="display:none">
+        <div class="card">
+          <h3>Rezultat verificare AI</h3>
+          <div id="vresult" class="ra"></div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <button class="sbtn" onclick="addV()">Adauga versiunea corectata</button>
+            <button class="ebtn" onclick="dlDoc()">Descarca .doc</button>
+            <button class="ebtn" onclick="document.getElementById('vbox').style.display='none'">Inchide</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Proceduri salvate (<span id="pc2">0</span>)</h3>
+        <div id="plist"><p style="color:#aaa;font-size:12px;font-style:italic">Nicio procedura adaugata</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" id="panel-pdf">
+    <div class="scrl">
+      <div class="info">Ataseaza un PDF - detectez automat text (Word) sau tabel (Excel) si generez fisierul editabil.</div>
+      <div class="card">
+        <h3>1. Incarca PDF</h3>
+        <div class="upz" onclick="document.getElementById('pdff').click()" ondragover="event.preventDefault()" ondrop="hPDrop(event)">
+          <input type="file" id="pdff" accept=".pdf" onchange="hPF(this.files[0])">
+          <strong>Click sau trage fisierul PDF</strong>
+          <p>Proceduri, contracte, facturi, tabele</p>
+        </div>
+        <div id="pdfst" style="margin-top:8px"></div>
+        <div class="prog" id="pdfprog" style="display:none"><div class="pb" id="pdfpb" style="width:0%"></div></div>
+      </div>
+      <div class="card" id="pdfcc" style="display:none">
+        <h3>2. Continut extras</h3>
+        <div id="pdfprev" class="ra" style="max-height:180px"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:12px;color:#666">Detectat:</span>
+          <span id="pdftb" style="background:#e8f5e9;color:#1a5c2a;padding:2px 7px;border-radius:8px;font-size:11px">TEXT Word</span>
+          <button class="ebtn" style="font-size:11px" onclick="setPT('text')">Forteaza Word</button>
+          <button class="ebtn" style="font-size:11px" onclick="setPT('table')">Forteaza Excel</button>
+        </div>
+      </div>
+      <div class="card" id="pdfconv" style="display:none">
+        <h3>3. Converteste</h3>
+        <div id="pdfmsg" style="margin-bottom:8px;display:none"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sbtn" id="btnconv" onclick="convertPdf()">Converteste cu AI</button>
+          <button class="ebtn" id="btndw" style="display:none" onclick="dlWord()">Descarca .doc</button>
+          <button class="ebtn" id="btndx" style="display:none" onclick="dlExcel()">Descarca .xlsx</button>
+        </div>
+        <div id="convres" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" id="panel-search">
+    <div class="scrl">
+      <div class="info">Surse legale de preturi conform art. 9 HG 395/2016 - acceptate la Curtea de Conturi.</div>
+      <div class="card">
+        <h3>Sursa 1 - Achizitii directe finalizate SEAP</h3>
+        <div class="fr">
+          <div class="fg"><label>Denumire produs/serviciu</label><input type="text" id="s1kw" placeholder="ex: hartie A4"/></div>
+          <div class="fg" style="max-width:120px"><label>Cod CPV</label><input type="text" id="s1cpv" placeholder="30197630"/></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label>De la</label><input type="date" id="s1from" value="2025-01-01"/></div>
+          <div class="fg"><label>Pana la</label><input type="date" id="s1to"/></div>
+          <div class="fg" style="max-width:90px"><label>Nr.</label><select id="s1sz"><option value="20">20</option><option value="50" selected>50</option><option value="100">100</option></select></div>
+        </div>
+        <button class="sbtn" id="s1btn" onclick="searchSEAP()">Cauta in SEAP</button>
+        <div id="s1res" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h3>Sursa 2 - SICAP.ai</h3>
+        <div class="fr"><div class="fg"><label>Termen cautare</label><input type="text" id="s2kw" placeholder="ex: imprimanta"/></div></div>
+        <button class="sbtn" onclick="openSICAP()">Deschide SICAP.ai</button>
+      </div>
+      <div class="card">
+        <h3>Sursa 3 - Analizeaza preturi cu AI</h3>
+        <textarea id="s3txt" style="width:100%;height:85px;padding:8px;border:1px solid #d0d0c8;border-radius:7px;font-size:12px;font-family:inherit;resize:vertical;outline:none" placeholder="Paste preturi din SEAP sau oferte furnizori..."></textarea>
+        <button class="sbtn" style="margin-top:8px" onclick="analyzeAI()">Genereaza nota estimare</button>
+      </div>
+    </div>
+  </div>
+  <div class="panel" id="panel-links">
+    <div class="scrl">
+      <div class="card">
+        <h3>SEAP / SICAP - acces direct</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sbtn" onclick="ol('https://www.e-licitatie.ro')">e-licitatie.ro</button>
+          <button class="sbtn" onclick="ol('https://www.e-licitatie.ro/pub/direct-acquisitions/list/0')">Catalog achizitii</button>
+          <button class="sbtn" onclick="ol('https://www.e-licitatie.ro/pub/direct-acquisitions/list/1')">Achizitii finalizate</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Resurse legislative</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="ebtn" onclick="ol('https://anap.gov.ro')">ANAP</button>
+          <button class="ebtn" onclick="ol('https://legislatie.just.ro')">Legislatie just.ro</button>
+          <button class="ebtn" onclick="ol('https://sicap.ai')">SICAP.ai</button>
+          <button class="ebtn" onclick="ol('https://lege5.ro')">Lege5.ro</button>
+          <button class="ebtn" onclick="ol('https://www.curteadeconturi.ro')">Curtea de Conturi</button>
+          <button class="ebtn" onclick="ol('https://apia.org.ro')">APIA</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+var apiKey='';
+var procedures=JSON.parse(localStorage.getItem('ap_procs')||'[]');
+var chatHistory=[];
+var pdfExtracted='';
+var pdfType='text';
+var verifiedText='';
+var procFT='';
+document.getElementById('s1to').value=new Date().toISOString().split('T')[0];
+renderProcs();
+function togglePass(){var i=document.getElementById('lkey');i.type=i.type==='password'?'text':'password';}
+function doLogin(){
+  var key=document.getElementById('lkey').value.trim();
+  if(!key||key.length<10){showErr('Introdu cheia API!');return;}
+  apiKey=key;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+}
+function showErr(m){var e=document.getElementById('lerr');e.textContent=m;e.style.display='block';}
+function doLogout(){
+  if(confirm('Deconectare?')){
+    apiKey='';
+    document.getElementById('lkey').value='';
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app').style.display='none';
+  }
+}
+document.getElementById('lkey').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+async function callAI(prompt,sys){
+  var sp=sys||getSys();
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:2048,
+      system:sp,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  if(!r.ok){var e=await r.json();throw new Error(e.error&&e.error.message?e.error.message:'Eroare API');}
+  var d=await r.json();
+  return d.content[0].text||'';
+}
+function getSys(){
+  var s='Expert achizitii publice Romania. Lege 98/2016, HG 395/2016, ANAP. Praguri 2025: produse/servicii sub 135060 lei, lucrari sub 451965 lei fara TVA. SEAP obligatoriu peste 5000 lei. Genereaza documente complete si legale. Raspunde in romana, citeaza articolele de lege.';
+  if(procedures.length){s+=' PROCEDURI APIA: ';procedures.slice(0,2).forEach(function(p,i){s+=''+(i+1)+'. '+p.text.substring(0,150)+' ';});}
+  return s;
+}
+async function sendMsg(){
+  var inp=document.getElementById('uinput');
+  var text=inp.value.trim();
+  if(!text)return;
+  document.getElementById('welcome').style.display='none';
+  addBbl('user',text);
+  chatHistory.push({role:'user',content:text});
+  inp.value='';inp.style.height='auto';
+  document.getElementById('sbtn').disabled=true;
+  var tid=addTyping();
+  try{
+    var rep=await callAI(text);
+    removeTyping(tid);addBbl('assistant',rep);
+    chatHistory.push({role:'assistant',content:rep});
+  }catch(e){removeTyping(tid);addBbl('assistant','Eroare: '+e.message);chatHistory.pop();}
+  document.getElementById('sbtn').disabled=false;
+}
+function addBbl(role,text){
+  var msgs=document.getElementById('msgs');
+  var d=document.createElement('div');d.className='msg '+role;
+  var av=document.createElement('div');av.className='av';av.textContent=role==='user'?'TU':'AI';
+  var b=document.createElement('div');b.className='bbl';b.textContent=text;
+  d.appendChild(av);d.appendChild(b);msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
+}
+var tc=0;
+function addTyping(){
+  var id='t'+(++tc);var msgs=document.getElementById('msgs');
+  var d=document.createElement('div');d.className='msg assistant';d.id=id;
+  d.innerHTML='<div class="av">AI</div><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return id;
+}
+function removeTyping(id){var e=document.getElementById(id);if(e)e.remove();}
+function qa(t){document.getElementById('uinput').value=t;sendMsg();}
+var docPrompts={
+  referat:'Genereaza un referat de necesitate complet si perfect legal pentru achizitionarea de [PRODUS/SERVICIU], cantitate [CANTITATE], valoare estimata [VALOARE] lei fara TVA, cod CPV [COD], sursa finantare [SURSA]. Conform HG 395/2016, rezistent la control Curtea de Conturi.',
+  estimare:'Genereaza nota de estimare a valorii contractului pentru [PRODUS/SERVICIU], metodologie completa conform art. 9 HG 395/2016, surse preturi si concluzie.',
+  caiet:'Genereaza caiet de sarcini complet pentru [PRODUS/SERVICIU] conform art. 155 Legea 98/2016. Specificatii tehnice neutre, conditii livrare, garantie.',
+  just:'Genereaza nota justificativa pentru achizitia directa a [PRODUS/SERVICIU], valoare [VALOARE] lei fara TVA, furnizor [FURNIZOR].',
+  atrib:'Genereaza nota de atribuire conform art. 216 Legea 98/2016 pentru [PRODUS/SERVICIU] atribuit la [FURNIZOR], valoare [VALOARE] lei.',
+  contract:'Genereaza contract de achizitie directa pentru [PRODUS/SERVICIU], valoare [VALOARE] lei fara TVA, cu toate clauzele obligatorii conform Legii 98/2016.',
+  receptie:'Genereaza proces verbal de receptie cantitativa si calitativa pentru [PRODUS/SERVICIU] livrat de [FURNIZOR], contract nr. [NR].',
+  checklist:'Genereaza checklist complet al documentelor obligatorii pentru dosarul de achizitie directa conform ANAP, cu referinte la lege, pentru audit si CCR.'
+};
+function ins(t){
+  document.getElementById('uinput').value=docPrompts[t];
+  document.getElementById('uinput').style.height='auto';
+  document.getElementById('uinput').style.height=document.getElementById('uinput').scrollHeight+'px';
+  switchTab('chat');document.getElementById('uinput').focus();
+}
+function switchTab(t){
+  var ids=['chat','proc','pdf','search','links'];
+  document.querySelectorAll('.tab').forEach(function(b,i){b.classList.toggle('active',ids[i]===t);});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('panel-'+t).classList.add('active');
+}
+function switchMt(t){
+  document.querySelectorAll('.mt').forEach(function(b){b.classList.toggle('active',b.textContent.toLowerCase().indexOf(t==='text'?'text':'fisier')>=0);});
+  document.getElementById('mt-text').classList.toggle('active',t==='text');
+  document.getElementById('mt-file').classList.toggle('active',t==='file');
+}
+function addPT(){
+  var t=document.getElementById('proc-text').value.trim();
+  if(!t){alert('Introdu textul!');return;}
+  procedures.push({text:t,source:'text',date:new Date().toLocaleDateString('ro')});
+  saveP();document.getElementById('proc-text').value='';alert('Procedura adaugata!');
+}
+async function verifyP(text){
+  if(!text||!text.trim()){alert('Introdu mai intai textul!');return;}
+  document.getElementById('vbox').style.display='block';
+  document.getElementById('vresult').textContent='AI verifica procedura...';
+  try{
+    var rep=await callAI('Verifica aceasta procedura interna fata de Legea 98/2016, HG 395/2016 si instructiunile ANAP. Identifica neconformitatile. Scrie versiunea CORECTATA marcand cu [CORECTAT] modificarile:\n\n'+text);
+    verifiedText=rep;document.getElementById('vresult').textContent=rep;
+  }catch(e){document.getElementById('vresult').textContent='Eroare: '+e.message;}
+}
+function addV(){
+  if(!verifiedText)return;
+  procedures.push({text:verifiedText,source:'verificat-AI',date:new Date().toLocaleDateString('ro')});
+  saveP();document.getElementById('vbox').style.display='none';alert('Versiunea corectata adaugata!');
+}
+function dlDoc(){
+  if(!verifiedText)return;
+  var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12pt;margin:2cm}p{margin:6pt 0;line-height:1.5}</style></head><body>'+verifiedText.split('\n').map(function(l){return '<p>'+l+'</p>';}).join('')+'</body></html>';
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'application/msword'}));a.download='procedura_corectata.doc';a.click();
+}
+async function handlePF(file){
+  if(!file)return;
+  document.getElementById('pfs').innerHTML='<div class="chip">'+file.name+'</div>';
+  try{
+    if(file.name.endsWith('.docx')){
+      var ab=await file.arrayBuffer();
+      var r=await mammoth.extractRawText({arrayBuffer:ab});
+      procFT=r.value;
+    }else if(file.name.endsWith('.xlsx')||file.name.endsWith('.xls')){
+      var ab=await file.arrayBuffer();
+      var wb=XLSX.read(ab,{type:'array'});
+      var t='';
+      wb.SheetNames.forEach(function(n){t+='=== '+n+' ===\n';XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1}).forEach(function(r){t+=r.join(' | ')+'\n';});t+='\n';});
+      procFT=t;
+    }else{procFT=await file.text();}
+    document.getElementById('pfs').innerHTML='<div class="chip">'+file.name+' - '+procFT.length+' caractere</div>';
+    document.getElementById('btn-af').style.display='inline-block';
+    document.getElementById('btn-vf').style.display='inline-block';
+  }catch(e){document.getElementById('pfs').innerHTML='<div class="err">Eroare: '+e.message+'</div>';}
+}
+function handlePDrop(ev){ev.preventDefault();handlePF(ev.dataTransfer.files[0]);}
+function addPFF(){
+  if(!procFT)return;
+  procedures.push({text:procFT,source:'fisier',date:new Date().toLocaleDateString('ro')});
+  saveP();procFT='';
+  document.getElementById('pfs').innerHTML='';
+  document.getElementById('btn-af').style.display='none';
+  document.getElementById('btn-vf').style.display='none';
+  alert('Procedura adaugata din fisier!');
+}
+function saveP(){localStorage.setItem('ap_procs',JSON.stringify(procedures));renderProcs();}
+function renderProcs(){
+  var n=procedures.length;
+  document.getElementById('pc').textContent=n;
+  document.getElementById('pc2').textContent=n;
+  var full=document.getElementById('plist');
+  var side=document.getElementById('psidebar');
+  if(!n){
+    full.innerHTML='<p style="color:#aaa;font-size:12px;font-style:italic">Nicio procedura adaugata</p>';
+    side.innerHTML='<div style="padding:7px 1rem;font-size:11px;color:#aaa;font-style:italic">Nicio procedura</div>';return;
+  }
+  full.innerHTML=procedures.map(function(p,i){
+    return '<div style="padding:9px;border:1px solid #e0e0d8;border-radius:8px;margin-bottom:7px;background:#fafafa"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-size:12px;font-weight:500;color:#1a3a5c">'+p.text.split('\n')[0].substring(0,55)+'</div><div style="font-size:11px;color:#aaa;margin-top:2px">'+p.source+' - '+p.date+'</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="ebtn" style="font-size:11px;padding:3px 7px" onclick="editP('+i+')">Edit</button><button class="ebtn" style="font-size:11px;padding:3px 7px;border-color:#e74c3c;color:#e74c3c" onclick="delP('+i+')">Del</button></div></div></div>';
+  }).join('');
+  side.innerHTML=procedures.map(function(p,i){
+    return '<div class="pitem"><span style="font-size:11px;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+p.text.split('\n')[0].substring(0,32)+'</span><span style="cursor:pointer;color:#e74c3c" onclick="delP('+i+')">x</span></div>';
+  }).join('');
+}
+function delP(i){if(confirm('Stergi?')){procedures.splice(i,1);saveP();}}
+function editP(i){var t=prompt('Editeaza:',procedures[i].text);if(t){procedures[i].text=t;saveP();}}
+async function hPF(file){
+  if(!file||file.type!=='application/pdf'){alert('Selecteaza un PDF!');return;}
+  document.getElementById('pdfst').innerHTML='<div class="chip">'+file.name+' ('+Math.round(file.size/1024)+' KB)</div>';
+  document.getElementById('pdfprog').style.display='block';
+  document.getElementById('pdfpb').style.width='10%';
+  try{
+    var ab=await file.arrayBuffer();
+    document.getElementById('pdfpb').style.width='30%';
+    var pdf=await pdfjsLib.getDocument({data:ab}).promise;
+    var text='';
+    for(var i=1;i<=Math.min(pdf.numPages,20);i++){
+      var pg=await pdf.getPage(i);
+      var tc=await pg.getTextContent();
+      text+=tc.items.map(function(s){return s.str;}).join(' ')+'\n';
+      document.getElementById('pdfpb').style.width=(30+i/pdf.numPages*55)+'%';
+    }
+    pdfExtracted=text.trim();
+    if(!pdfExtracted){
+      document.getElementById('pdfst').innerHTML+='<div class="err" style="margin-top:8px">PDF scanat - nu pot extrage textul.</div>';
+      document.getElementById('pdfprog').style.display='none';return;
+    }
+    document.getElementById('pdfpb').style.width='100%';
+    setTimeout(function(){document.getElementById('pdfprog').style.display='none';},400);
+    var lines=pdfExtracted.split('\n').filter(function(l){return l.trim();});
+    var ts=lines.filter(function(l){return /\d+[\s,\.]\d+/.test(l)&&l.split(/\s{2,}|\t/).length>2;}).length;
+    pdfType=ts>lines.length*.3?'table':'text';
+    document.getElementById('pdfprev').textContent=pdfExtracted.substring(0,600)+(pdfExtracted.length>600?'\n\n[...continuat...]':'');
+    document.getElementById('pdftb').textContent=pdfType==='table'?'TABEL Excel':'TEXT Word';
+    document.getElementById('pdftb').style.background=pdfType==='table'?'#fce4e4':'#e8f5e9';
+    document.getElementById('pdftb').style.color=pdfType==='table'?'#c0392b':'#1a5c2a';
+    document.getElementById('pdfcc').style.display='block';
+    document.getElementById('pdfconv').style.display='block';
+  }catch(e){
+    document.getElementById('pdfst').innerHTML+='<div class="err" style="margin-top:8px">Eroare: '+e.message+'</div>';
+    document.getElementById('pdfprog').style.display='none';
+  }
+}
+function hPDrop(ev){ev.preventDefault();hPF(ev.dataTransfer.files[0]);}
+function setPT(t){
+  pdfType=t;
+  document.getElementById('pdftb').textContent=t==='table'?'TABEL Excel':'TEXT Word';
+  document.getElementById('pdftb').style.background=t==='table'?'#fce4e4':'#e8f5e9';
+  document.getElementById('pdftb').style.color=t==='table'?'#c0392b':'#1a5c2a';
+}
+async function convertPdf(){
+  if(!pdfExtracted)return;
+  var btn=document.getElementById('btnconv');
+  btn.disabled=true;btn.textContent='AI proceseaza...';
+  var msg=document.getElementById('pdfmsg');
+  msg.style.display='block';msg.className='info';msg.textContent='AI structureaza continutul...';
+  try{
+    var prompt=pdfType==='table'
+      ?'Extrage toate tabelele din text si returneaza DOAR JSON valid: {"tables":[{"title":"titlu","headers":["col1","col2"],"rows":[["val1","val2"]]}]}\n\nText:\n'+pdfExtracted.substring(0,7000)
+      :'Structureaza textul urmator intr-un document profesional cu titluri si paragrafe logice. Pastreaza toate informatiile.\n\nText:\n'+pdfExtracted.substring(0,7000);
+    var rep=await callAI(prompt,'Esti expert in procesarea documentelor. Raspunde exact cum ti se cere.');
+    msg.className='ok';msg.textContent='Conversie completa! Descarca fisierul.';
+    if(pdfType==='table'){window._pdfTbl=rep;document.getElementById('btndx').style.display='inline-block';document.getElementById('btndw').style.display='none';}
+    else{window._pdfWord=rep;document.getElementById('btndw').style.display='inline-block';document.getElementById('btndx').style.display='none';}
+    document.getElementById('convres').innerHTML='<div class="ra">'+rep.substring(0,350)+'</div>';
+  }catch(e){msg.className='err';msg.textContent='Eroare: '+e.message;}
+  btn.disabled=false;btn.textContent='Converteste cu AI';
+}
+function dlWord(){
+  var text=window._pdfWord||'';if(!text)return;
+  var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12pt;margin:2cm}h2{color:#1a3a5c}p{margin:6pt 0;line-height:1.5}</style></head><body>'+text.split('\n').map(function(l){l=l.trim();if(!l)return'';if(/^#{1,2}\s/.test(l))return'<h2>'+l.replace(/^#+\s*/,'')+'</h2>';return'<p>'+l+'</p>';}).join('')+'</body></html>';
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'application/msword'}));a.download='document_convertit.doc';a.click();
+}
+function dlExcel(){
+  var raw=window._pdfTbl||'';if(!raw)return;
+  try{
+    var m=raw.match(/\{[\s\S]*\}/);
+    var json=JSON.parse(m[0]);
+    var wb=XLSX.utils.book_new();
+    (json.tables||[json]).forEach(function(t,i){
+      var ws=XLSX.utils.aoa_to_sheet([t.headers||[]].concat(t.rows||[]));
+      XLSX.utils.book_append_sheet(wb,ws,(t.title||'Tabel '+(i+1)).substring(0,31));
+    });
+    XLSX.writeFile(wb,'tabel_convertit.xlsx');
+  }catch(e){
+    var wb=XLSX.utils.book_new();
+    var ws=XLSX.utils.aoa_to_sheet(raw.split('\n').map(function(l){return l.split(/\t|\s{2,}/);}));
+    XLSX.utils.book_append_sheet(wb,ws,'Date');XLSX.writeFile(wb,'date_convertite.xlsx');
+  }
+}
+async function searchSEAP(){
+  var kw=document.getElementById('s1kw').value.trim();
+  var cpv=document.getElementById('s1cpv').value.trim();
+  if(!kw&&!cpv){alert('Introdu un termen!');return;}
+  var btn=document.getElementById('s1btn');btn.disabled=true;btn.textContent='Se cauta...';
+  document.getElementById('s1res').innerHTML='<div style="color:#888;font-size:12px;padding:.5rem">Cautare...</div>';
+  try{
+    var r=await fetch('https://e-licitatie.ro/api-pub/PublicAcquisition/GetDirectAcquisitionList',{
+      method:'POST',
+      headers:{'Content-Type':'application/json;charset=UTF-8','Referer':'https://e-licitatie.ro/pub/direct-acquisitions/list/1'},
+      body:JSON.stringify({pageSize:parseInt(document.getElementById('s1sz').value),showOngoingDa:false,cookieContext:null,pageIndex:0,sysDirectAcquisitionStateId:null,publicationDateStart:null,publicationDateEnd:null,finalizationDateStart:document.getElementById('s1from').value||null,finalizationDateEnd:document.getElementById('s1to').value||null,cpvCode:cpv||null,keyword:kw||null})
+    });
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    renderSEAP(await r.json(),kw||cpv);
+  }catch(e){
+    document.getElementById('s1res').innerHTML='<div class="err">API SEAP blocat. Deschide e-licitatie.ro, copiaza rezultatele si paste in Sursa 3.</div>';
+  }
+  btn.disabled=false;btn.textContent='Cauta in SEAP';
+}
+function renderSEAP(data,q){
+  var items=data.directAcquisitionList||data.items||[];
+  if(!items.length){document.getElementById('s1res').innerHTML='<p style="color:#888;font-size:12px">Niciun rezultat.</p>';return;}
+  window._sd=items;
+  var prices=items.map(function(i){return parseFloat(i.closingValue||i.totalAmount||0);}).filter(function(p){return p>0;}).sort(function(a,b){return a-b;});
+  var mn=prices[0]||0,mx=prices[prices.length-1]||0,av=prices.length?prices.reduce(function(a,b){return a+b;})/prices.length:0;
+  var html='<div style="display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap;align-items:center"><strong style="font-size:12px">'+items.length+' rezultate</strong><button class="ebtn" style="font-size:11px" onclick="expCSV()">CSV</button><button class="ebtn" style="font-size:11px" onclick="copyAI2()">Copiaza pt AI</button></div>';
+  html+='<div style="display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap"><div style="background:#e8f5e9;border-radius:6px;padding:5px 9px;font-size:11px"><strong style="color:#1a5c2a">'+mn.toFixed(2)+' lei</strong><br>Minim</div><div style="background:#fff8e1;border-radius:6px;padding:5px 9px;font-size:11px"><strong style="color:#7a5c00">'+av.toFixed(2)+' lei</strong><br>Mediu</div><div style="background:#fce4e4;border-radius:6px;padding:5px 9px;font-size:11px"><strong style="color:#c0392b">'+mx.toFixed(2)+' lei</strong><br>Maxim</div></div>';
+  html+='<div style="overflow-x:auto"><table class="rtbl"><thead><tr><th>#</th><th>Denumire</th><th>Furnizor</th><th>Valoare</th><th>Data</th></tr></thead><tbody>';
+  items.forEach(function(item,i){
+    var v=parseFloat(item.closingValue||item.totalAmount||0);
+    html+='<tr class="'+(v===mn&&v>0?'best':'')+'"><td>'+(i+1)+'</td><td style="max-width:170px">'+(item.directAcquisitionName||'-')+'</td><td style="max-width:130px">'+(item.winner&&item.winner.denomination?item.winner.denomination:item.supplierName||'-')+'</td><td class="ph">'+(v>0?v.toFixed(2)+' lei':'N/A')+(v===mn&&v>0?' <span class="bg2">cel mai mic</span>':'')+'</td><td>'+(item.finalizationDate||'').substring(0,10)+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('s1res').innerHTML=html;
+}
+function expCSV(){
+  var items=window._sd||[];
+  var c='Nr,Denumire,Furnizor,Valoare,Data\n';
+  items.forEach(function(item,i){var v=parseFloat(item.closingValue||item.totalAmount||0);c+=(i+1)+',"'+(item.directAcquisitionName||'').replace(/"/g,"'")+'",'+(item.winner&&item.winner.denomination?item.winner.denomination.replace(/"/g,"'"):'')+','+v.toFixed(2)+',"'+(item.finalizationDate||'').substring(0,10)+'"\n';});
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+c],{type:'text/csv;charset=utf-8'}));a.download='preturi_seap.csv';a.click();
+}
+function copyAI2(){
+  var items=window._sd||[];
+  var t='PRETURI SEAP:\n\n';
+  items.forEach(function(item,i){var v=parseFloat(item.closingValue||item.totalAmount||0);if(v>0)t+=(i+1)+'. '+(item.directAcquisitionName||'')+' - '+v.toFixed(2)+' lei\n';});
+  navigator.clipboard.writeText(t).then(function(){alert('Copiat! Paste in Sursa 3.');});
+}
+function openSICAP(){var kw=document.getElementById('s2kw').value.trim();window.open(kw?'https://sicap.ai/?q='+encodeURIComponent(kw):'https://sicap.ai','_blank');}
+function analyzeAI(){
+  var t=document.getElementById('s3txt').value.trim();
+  if(!t){alert('Introdu preturile!');return;}
+  document.getElementById('uinput').value='Analizeaza aceste preturi si genereaza nota de estimare a valorii conform art. 9 HG 395/2016:\n\n'+t;
+  switchTab('chat');setTimeout(function(){sendMsg();},200);
+}
+function ol(url){window.open(url,'_blank');}
+</script>
+</body>
+</html>
